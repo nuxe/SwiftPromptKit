@@ -18,3 +18,11 @@ ReasoningDisclosureView: Optional expandable view to display the AI model's reas
 
 Ensure modularity, clarity, and extensibility. Prioritize clean, reusable SwiftUI components or UIKit views wrapped for SwiftUI compatibility, structured clearly for maintainability.
 
+Swift UIKit component demo app that:
+    •    Shows a UITableView with a list of all Prompt-Kit UI components.
+    •    When a component name is tapped, navigates (pushes) to a UIViewController demonstrating the selected component embedded in a minimal, interactive example view.
+    •    Each demo UIViewController should clearly showcase essential interactions and states of its component.
+    •    Display an error message if the user taps on a component that has not been implemented yet
+    •    Structure the code cleanly with clear navigation logic and reusable component views.
+    •    Follow UIKit best practices for readability, maintainability, and simplicity.
+    
