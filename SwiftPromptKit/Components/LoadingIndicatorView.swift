@@ -99,6 +99,9 @@ public final class LoadingIndicatorView: UIView {
     /// Indicates whether the loader is currently animating
     private(set) var isAnimating: Bool = false
     
+    /// Internal flag to prevent recursion between setupLoaderVariant and startAnimating
+    private var isSettingUpVariant: Bool = false
+    
     // MARK: - UI Elements
     
     /// Container view for the loader animation elements
@@ -162,6 +165,10 @@ public final class LoadingIndicatorView: UIView {
     }
     
     private func setupLoaderVariant() {
+        // Guard against recursive calls between startAnimating and setupLoaderVariant
+        guard !isSettingUpVariant else { return }
+        isSettingUpVariant = true
+        
         // Remove any existing loader subviews
         loaderContainerView.subviews.forEach { $0.removeFromSuperview() }
         
@@ -197,8 +204,13 @@ public final class LoadingIndicatorView: UIView {
         }
         
         // If was animating before switching variants, restart animation
-        if isAnimating {
-            startAnimating()
+        // But don't call setupLoaderVariant again
+        let wasAnimating = isAnimating
+        isSettingUpVariant = false
+        
+        if wasAnimating {
+            // Start animations directly without calling setupLoaderVariant again
+            startDirectAnimation()
         }
     }
     
@@ -233,13 +245,35 @@ public final class LoadingIndicatorView: UIView {
     
     /// Starts the loading animation
     public func startAnimating() {
+        // If already animating, no need to restart
         guard !isAnimating else { return }
         
         isAnimating = true
         delegate?.loadingIndicatorDidStartAnimating(self)
         
-        // Each loader type handles its own animation
-        // The animation is set up in each setup method
+        // Force layout to ensure views are properly sized before animation
+        layoutIfNeeded()
+        
+        // Check if we're in a recursive call
+        if !isSettingUpVariant {
+            setupLoaderVariant()
+        } else {
+            // If we're already setting up variant, just start animations directly
+            startDirectAnimation()
+        }
+    }
+    
+    /// Starts animations directly without calling setupLoaderVariant
+    private func startDirectAnimation() {
+        // This method applies animations directly depending on the variant
+        // But doesn't call setupLoaderVariant which would cause recursion
+        
+        // Since animations are set up in the respective setup methods,
+        // we don't need to do anything special here - this method exists 
+        // to break the recursion while allowing animations to be triggered
+        
+        // Simply mark as animating if not already
+        isAnimating = true
     }
     
     /// Stops the loading animation
