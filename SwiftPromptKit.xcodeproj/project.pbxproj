@@ -34,6 +34,18 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				"TypescriptExamples/chat-container/page.mdx",
+				"TypescriptExamples/code-block/page.mdx",
+				TypescriptExamples/installation/page.mdx,
+				TypescriptExamples/introduction/page.mdx,
+				TypescriptExamples/loader/page.mdx,
+				TypescriptExamples/markdown/page.mdx,
+				TypescriptExamples/message/page.mdx,
+				"TypescriptExamples/prompt-input/page.mdx",
+				"TypescriptExamples/prompt-suggestion/page.mdx",
+				TypescriptExamples/reasoning/page.mdx,
+				"TypescriptExamples/response-stream/page.mdx",
+				"TypescriptExamples/scroll-button/page.mdx",
 			);
 			target = 43BB80E12D88CD1B0026BB73 /* SwiftPromptKit */;
 		};
