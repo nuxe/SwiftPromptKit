@@ -20,11 +20,22 @@ final class LoadingIndicatorDemoViewController: UIViewController {
         return stackView
     }()
     
-    // Replace segmented control with picker view to handle long variant names
-    private let variantPickerView: UIPickerView = {
-        let pickerView = UIPickerView()
-        pickerView.translatesAutoresizingMaskIntoConstraints = false
-        return pickerView
+    // Replace picker view with a dropdown button
+    private let variantDropdownButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("circular", for: .normal)
+        button.contentHorizontalAlignment = .left
+        button.titleLabel?.font = .systemFont(ofSize: 16)
+        button.backgroundColor = .tertiarySystemBackground
+        button.layer.cornerRadius = 8
+        button.contentEdgeInsets = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+        let imageConfig = UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
+        let chevronImage = UIImage(systemName: "chevron.down", withConfiguration: imageConfig)
+        button.setImage(chevronImage, for: .normal)
+        button.semanticContentAttribute = .forceRightToLeft
+        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 0)
+        return button
     }()
     
     private let variantOptions: [String] = [
@@ -32,6 +43,8 @@ final class LoadingIndicatorDemoViewController: UIViewController {
         "dots", "typing", "wave", "bars", 
         "terminal", "text-blink", "text-shimmer", "loading-dots"
     ]
+    
+    private var selectedVariantIndex: Int = 0
     
     private let sizeControl: UISegmentedControl = {
         let control = UISegmentedControl(items: ["Small", "Medium", "Large"])
@@ -61,11 +74,8 @@ final class LoadingIndicatorDemoViewController: UIViewController {
         return toggle
     }()
     
-    private let loadingIndicatorView: LoadingIndicatorView = {
-        let view = LoadingIndicatorView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
+    private var loadingIndicatorView: LoadingIndicatorView!
+    private var loadingContainerView: UIView!
     
     private let textField: UITextField = {
         let textField = UITextField()
@@ -81,6 +91,7 @@ final class LoadingIndicatorDemoViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
+        createLoadingIndicator()
         loadingIndicatorView.startAnimating()
     }
     
@@ -92,7 +103,7 @@ final class LoadingIndicatorDemoViewController: UIViewController {
         
         setupScrollView()
         setupControls()
-        setupLoadingIndicator()
+        setupLoadingContainer()
         setupActions()
     }
     
@@ -115,12 +126,11 @@ final class LoadingIndicatorDemoViewController: UIViewController {
     }
     
     private func setupControls() {
-        // Variant selector - use picker instead of segmented control
+        // Variant selector - use dropdown instead of picker
         let variantLabel = createLabel(text: "Loader Variant:")
         
-        variantPickerView.delegate = self
-        variantPickerView.dataSource = self
-        let variantPickerWrapper = createControlWrapper(for: variantPickerView, height: 120)
+        let variantButtonWrapper = createControlWrapper(for: variantDropdownButton)
+        variantButtonWrapper.heightAnchor.constraint(equalToConstant: 50).isActive = true
         
         // Size selector
         let sizeLabel = createLabel(text: "Size:")
@@ -151,7 +161,7 @@ final class LoadingIndicatorDemoViewController: UIViewController {
         
         // Add all controls to stack view
         contentStackView.addArrangedSubview(variantLabel)
-        contentStackView.addArrangedSubview(variantPickerWrapper)
+        contentStackView.addArrangedSubview(variantButtonWrapper)
         contentStackView.addArrangedSubview(sizeLabel)
         contentStackView.addArrangedSubview(sizeControlWrapper)
         contentStackView.addArrangedSubview(colorLabel)
@@ -169,31 +179,53 @@ final class LoadingIndicatorDemoViewController: UIViewController {
             separatorView.heightAnchor.constraint(equalToConstant: 1),
             separatorView.widthAnchor.constraint(equalTo: contentStackView.widthAnchor)
         ])
+        
+        // Configure the dropdown menu
+        configureVariantDropdown()
     }
     
-    private func setupLoadingIndicator() {
+    private func setupLoadingContainer() {
         // Create a container for the loading indicator
-        let containerView = UIView()
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        containerView.backgroundColor = .secondarySystemBackground
-        containerView.layer.cornerRadius = 16
+        loadingContainerView = UIView()
+        loadingContainerView.translatesAutoresizingMaskIntoConstraints = false
+        loadingContainerView.backgroundColor = .secondarySystemBackground
+        loadingContainerView.layer.cornerRadius = 16
         
-        containerView.addSubview(loadingIndicatorView)
+        contentStackView.addArrangedSubview(loadingContainerView)
+        NSLayoutConstraint.activate([
+            loadingContainerView.heightAnchor.constraint(equalToConstant: 200),
+            loadingContainerView.widthAnchor.constraint(equalTo: contentStackView.widthAnchor)
+        ])
+    }
+    
+    private func createLoadingIndicator() {
+        // Create a new loader instance
+        if loadingIndicatorView != nil {
+            loadingIndicatorView.stopAnimating()
+            loadingIndicatorView.removeFromSuperview()
+        }
+        
+        loadingIndicatorView = LoadingIndicatorView(
+            variant: getSelectedVariant(),
+            size: getSelectedSize(),
+            text: textSwitch.isOn ? (textField.text?.isEmpty == false ? textField.text : "Loading") : nil
+        )
+        loadingIndicatorView.translatesAutoresizingMaskIntoConstraints = false
+        loadingIndicatorView.primaryColor = getSelectedColor()
+        
+        loadingContainerView.addSubview(loadingIndicatorView)
         
         NSLayoutConstraint.activate([
-            loadingIndicatorView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            loadingIndicatorView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            containerView.heightAnchor.constraint(equalToConstant: 200),
+            loadingIndicatorView.centerXAnchor.constraint(equalTo: loadingContainerView.centerXAnchor),
+            loadingIndicatorView.centerYAnchor.constraint(equalTo: loadingContainerView.centerYAnchor)
         ])
         
-        contentStackView.addArrangedSubview(containerView)
-        NSLayoutConstraint.activate([
-            containerView.widthAnchor.constraint(equalTo: contentStackView.widthAnchor)
-        ])
+        if animationSwitch.isOn {
+            loadingIndicatorView.startAnimating()
+        }
     }
     
     private func setupActions() {
-        // Now using picker view instead of segmented control for variants
         sizeControl.addTarget(self, action: #selector(sizeChanged), for: .valueChanged)
         colorControl.addTarget(self, action: #selector(colorChanged), for: .valueChanged)
         textSwitch.addTarget(self, action: #selector(textSwitchChanged), for: .valueChanged)
@@ -203,6 +235,29 @@ final class LoadingIndicatorDemoViewController: UIViewController {
         // Add tap gesture to dismiss keyboard
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         view.addGestureRecognizer(tapGesture)
+    }
+    
+    private func configureVariantDropdown() {
+        var menuActions = [UIAction]()
+        
+        for (index, option) in variantOptions.enumerated() {
+            let action = UIAction(title: option) { [weak self] _ in
+                guard let self = self else { return }
+                self.selectedVariantIndex = index
+                self.variantDropdownButton.setTitle(option, for: .normal)
+                self.updateVariant()
+            }
+            
+            // Mark the currently selected variant
+            if index == selectedVariantIndex {
+                action.state = .on
+            }
+            
+            menuActions.append(action)
+        }
+        
+        variantDropdownButton.menu = UIMenu(title: "Select Variant", children: menuActions)
+        variantDropdownButton.showsMenuAsPrimaryAction = true
     }
     
     // MARK: - Helper Methods
@@ -251,45 +306,45 @@ final class LoadingIndicatorDemoViewController: UIViewController {
         return wrapper
     }
     
-    // MARK: - Action Methods
-    
-    private func updateVariant(at index: Int) {
-        let variant: LoaderVariant
-        
-        switch index {
-        case 0:
-            variant = .circular
-        case 1:
-            variant = .classic
-        case 2:
-            variant = .pulse
-        case 3:
-            variant = .pulseDot
-        case 4:
-            variant = .dots
-        case 5:
-            variant = .typing
-        case 6:
-            variant = .wave
-        case 7:
-            variant = .bars
-        case 8:
-            variant = .terminal
-        case 9:
-            variant = .textBlink
-        case 10:
-            variant = .textShimmer
-        case 11:
-            variant = .loadingDots
-        default:
-            variant = .circular
+    private func getSelectedVariant() -> LoaderVariant {
+        switch selectedVariantIndex {
+        case 0: return .circular
+        case 1: return .classic
+        case 2: return .pulse
+        case 3: return .pulseDot
+        case 4: return .dots
+        case 5: return .typing
+        case 6: return .wave
+        case 7: return .bars
+        case 8: return .terminal
+        case 9: return .textBlink
+        case 10: return .textShimmer
+        case 11: return .loadingDots
+        default: return .circular
         }
-        
-        // First stop any current animation
-        loadingIndicatorView.stopAnimating()
-        
-        // Update the variant
-        loadingIndicatorView.variant = variant
+    }
+    
+    private func getSelectedSize() -> LoaderSize {
+        switch sizeControl.selectedSegmentIndex {
+        case 0: return .small
+        case 1: return .medium
+        case 2: return .large
+        default: return .medium
+        }
+    }
+    
+    private func getSelectedColor() -> UIColor {
+        switch colorControl.selectedSegmentIndex {
+        case 0: return .systemBlue
+        case 1: return .systemRed
+        case 2: return .systemGreen
+        case 3: return .systemPurple
+        default: return .systemBlue
+        }
+    }
+    
+    private func updateVariant() {
+        let variant = getSelectedVariant()
         
         // Update the text switch state based on whether the selected variant supports text
         let isTextVariant = (variant == .textBlink || variant == .textShimmer || variant == .loadingDots)
@@ -304,46 +359,18 @@ final class LoadingIndicatorDemoViewController: UIViewController {
             textSwitchChanged()
         }
         
-        // Restart animation if it was on
-        if animationSwitch.isOn {
-            loadingIndicatorView.startAnimating()
-        }
+        // Recreate the loading indicator
+        createLoadingIndicator()
     }
     
+    // MARK: - Action Methods
+    
     @objc private func sizeChanged() {
-        let size: LoaderSize
-        
-        switch sizeControl.selectedSegmentIndex {
-        case 0:
-            size = .small
-        case 1:
-            size = .medium
-        case 2:
-            size = .large
-        default:
-            size = .medium
-        }
-        
-        loadingIndicatorView.size = size
+        loadingIndicatorView.size = getSelectedSize()
     }
     
     @objc private func colorChanged() {
-        let color: UIColor
-        
-        switch colorControl.selectedSegmentIndex {
-        case 0:
-            color = .systemBlue
-        case 1:
-            color = .systemRed
-        case 2:
-            color = .systemGreen
-        case 3:
-            color = .systemPurple
-        default:
-            color = .systemBlue
-        }
-        
-        loadingIndicatorView.primaryColor = color
+        loadingIndicatorView.primaryColor = getSelectedColor()
     }
     
     @objc private func textSwitchChanged() {
@@ -373,25 +400,5 @@ final class LoadingIndicatorDemoViewController: UIViewController {
     
     @objc private func dismissKeyboard() {
         view.endEditing(true)
-    }
-}
-
-// MARK: - UIPickerViewDelegate & UIPickerViewDataSource
-
-extension LoadingIndicatorDemoViewController: UIPickerViewDelegate, UIPickerViewDataSource {
-    func numberOfComponents(in pickerView: UIPickerView) -> Int {
-        return 1
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        return variantOptions.count
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
-        return variantOptions[row]
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-        updateVariant(at: row)
     }
 } 
