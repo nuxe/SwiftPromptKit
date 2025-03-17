@@ -51,8 +51,8 @@ final class DemoListViewController: UIViewController {
         ComponentItem(
             name: "LoadingIndicatorView",
             description: "Visually appealing loader to indicate processing",
-            status: .notImplemented,
-            demoViewControllerProvider: { NotImplementedComponentViewController(componentName: "LoadingIndicatorView") }
+            status: .implemented,
+            demoViewControllerProvider: { LoadingIndicatorDemoViewController() }
         ),
         ComponentItem(
             name: "PromptSuggestionView",
