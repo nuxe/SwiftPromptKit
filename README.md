@@ -1,28 +1,151 @@
-Create a Swift UIKit equivalent of the Prompt-Kit component library, designed specifically for developing AI-driven chat interfaces in iOS apps. The framework should emphasize modularity, ease of integration, and customizable aesthetics, allowing developers to rapidly prototype and build conversational interfaces with the following key components:
+# SwiftPromptKit
 
-PromptInputView: A user-friendly input component that supports text entry, placeholder hints, send actions, and input validation.
+SwiftPromptKit is a modern, modular UIKit component library specifically designed for building AI-driven chat interfaces in iOS applications. Inspired by [Prompt-Kit](https://www.prompt-kit.com/), it provides ready-to-use UI components to quickly build beautiful, interactive AI chat experiences.
 
-MessageBubbleView: Customizable chat bubbles for messages, differentiating between user and AI-generated content, with support for text formatting and interactive elements.
+## Screenshots
 
-MarkdownRenderer: A SwiftUI view or UIKit component capable of rendering Markdown-formatted text with support for rich formatting including bold, italic, bullet lists, links, and code blocks.
+<p align="center">
+  <img src="Screenshots/DemoList.png" width="250" alt="Component List">
+  <img src="Screenshots/PromptInput.png" width="250" alt="Prompt Input Component">
+  <img src="Screenshots/LoadingIndicator.png" width="250" alt="Loading Indicator Component">
+</p>
 
-AutoScrollingChatView: A responsive, scrollable chat container that automatically scrolls to the latest message, enhancing the user experience during live interactions.
+## Features
 
-LoadingIndicatorView: A visually appealing loader to indicate processing or awaiting AI responses.
+- 🧩 **Modular Components**: Each component is designed to be used independently or together to build complete chat experiences
+- 🎨 **Customizable**: Easily adapt the look and feel to match your app's design system
+- 📱 **iOS-Native**: Built with UIKit for optimal performance and familiar integration in iOS apps
+- ♿️ **Accessibility**: Components support VoiceOver and other accessibility features
+- 🚀 **Demo App**: Includes an interactive demo app showcasing all components
 
-PromptSuggestionView: Interactive prompts or suggestion chips to guide user interaction and improve engagement.
+## Components
 
-RealTimeResponseHandler: Logic to handle streaming responses from AI models, updating UI dynamically as content arrives.
+SwiftPromptKit includes the following components:
 
-ReasoningDisclosureView: Optional expandable view to display the AI model's reasoning steps, enhancing transparency and trust.
+| Component | Status | Description |
+|-----------|--------|-------------|
+| PromptInputView | ✅ Implemented | A user-friendly input component for text entry |
+| LoadingIndicatorView | ✅ Implemented | Visually appealing loader to indicate processing |
+| MessageBubbleView | 🔄 Planned | Chat bubbles for messages with different styles |
+| MarkdownRenderer | 🔄 Planned | Renders Markdown-formatted text with rich formatting |
+| AutoScrollingChatView | 🔄 Planned | Scrollable chat container that automatically scrolls to latest messages |
+| PromptSuggestionView | 🔄 Planned | Interactive prompts or suggestion chips |
+| RealTimeResponseHandler | 🔄 Planned | Logic to handle streaming responses from AI models |
+| ReasoningDisclosureView | 🔄 Planned | Expandable view to display AI reasoning steps |
 
-Ensure modularity, clarity, and extensibility. Prioritize clean, reusable SwiftUI components or UIKit views wrapped for SwiftUI compatibility, structured clearly for maintainability.
+## Requirements
 
-Swift UIKit component demo app that:
-    •    Shows a UITableView with a list of all Prompt-Kit UI components.
-    •    When a component name is tapped, navigates (pushes) to a UIViewController demonstrating the selected component embedded in a minimal, interactive example view.
-    •    Each demo UIViewController should clearly showcase essential interactions and states of its component.
-    •    Display an error message if the user taps on a component that has not been implemented yet
-    •    Structure the code cleanly with clear navigation logic and reusable component views.
-    •    Follow UIKit best practices for readability, maintainability, and simplicity.
+- iOS 14.0+
+- Swift 5.5+
+- Xcode 13.0+
+
+## Installation
+
+### Swift Package Manager
+
+Add the following to your `Package.swift` file:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/nuxe/SwiftPromptKit.git", from: "0.1.0")
+]
+```
+
+### Manual Installation
+
+1. Clone this repository
+2. Drag and drop the `SwiftPromptKit` folder into your Xcode project
+3. Make sure to check "Copy items if needed" and select your target
+
+## Usage
+
+### PromptInputView
+
+![Prompt Input Component](Screenshots/PromptInput.png)
+
+```swift
+// Create the input view
+let promptInputView = PromptInputView()
+promptInputView.translatesAutoresizingMaskIntoConstraints = false
+promptInputView.placeholder = "Ask me anything..."
+promptInputView.delegate = self
+
+// Add to your view
+view.addSubview(promptInputView)
+
+// Set up constraints
+NSLayoutConstraint.activate([
+    promptInputView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+    promptInputView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+    promptInputView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -16)
+])
+
+// Implement the delegate
+extension YourViewController: PromptInputViewDelegate {
+    func promptInputView(_ inputView: PromptInputView, didSubmitText text: String) {
+        // Handle submitted text
+        print("User submitted: \(text)")
+    }
     
+    func promptInputView(_ inputView: PromptInputView, didChangeText text: String) {
+        // Optional: handle text changes
+    }
+}
+```
+
+### LoadingIndicatorView
+
+![Loading Indicator Component](Screenshots/LoadingIndicator.png)
+
+```swift
+// Create the loading indicator
+let loadingIndicator = LoadingIndicatorView()
+loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
+loadingIndicator.style = .dots // Options: .dots, .pulse, .typingIndicator
+loadingIndicator.color = .systemBlue
+
+// Add to your view
+view.addSubview(loadingIndicator)
+
+// Set up constraints
+NSLayoutConstraint.activate([
+    loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+    loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+    loadingIndicator.widthAnchor.constraint(equalToConstant: 80),
+    loadingIndicator.heightAnchor.constraint(equalToConstant: 40)
+])
+
+// Start the animation
+loadingIndicator.startAnimating()
+
+// Later, stop the animation
+loadingIndicator.stopAnimating()
+```
+
+## Demo App
+
+![Component List](Screenshots/DemoList.png)
+
+SwiftPromptKit includes a demo app that showcases all available components and their customization options. To run the demo app:
+
+1. Clone this repository
+2. Open `SwiftPromptKit.xcodeproj` in Xcode
+3. Select the `SwiftPromptKit` scheme
+4. Run the project on a simulator or device
+
+## Customization
+
+Most components support customization through properties and delegate methods. See individual component documentation for details.
+
+## Contribution
+Contributions are welcome! 
+
+Please make sure to update tests as appropriate.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- [Prompt-Kit](https://www.prompt-kit.com/) - The original TypeScript library that inspired this project
