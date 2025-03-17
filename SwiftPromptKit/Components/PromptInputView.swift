@@ -201,11 +201,11 @@ public final class PromptInputView: UIView {
     }
     
     private func setupActions() {
-        @objc func sendButtonTapped() {
-            submitText()
-        }
-        
-        sendButton.addTarget(self, action: #selector(sendButtonTapped), for: .touchUpInside)
+        sendButton.addTarget(self, action: #selector(handleSendButtonTap), for: .touchUpInside)
+    }
+    
+    @objc private func handleSendButtonTap() {
+        submitText()
     }
     
     private func createActionButton(image: UIImage, accessibilityLabel: String, action: @escaping () -> Void) -> UIButton {
@@ -254,8 +254,9 @@ public final class PromptInputView: UIView {
     private func submitText() {
         guard !textView.text.isEmpty else { return }
         
-        let textToSubmit = textView.text
-        delegate?.promptInputView(self, didSubmitText: textToSubmit)
+        if let textToSubmit = textView.text {
+            delegate?.promptInputView(self, didSubmitText: textToSubmit)
+        }
         
         // Don't clear text here to allow the delegate to decide whether to clear it
     }
