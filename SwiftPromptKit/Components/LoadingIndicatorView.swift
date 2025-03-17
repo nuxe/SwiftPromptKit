@@ -253,6 +253,20 @@ public final class LoadingIndicatorView: UIView {
         loaderContainerView.layer.removeAllAnimations()
         loaderContainerView.subviews.forEach { 
             $0.layer.removeAllAnimations()
+            $0.subviews.forEach {
+                $0.layer.removeAllAnimations()
+            }
+            if let layers = $0.layer.sublayers {
+                for layer in layers {
+                    layer.removeAllAnimations()
+                }
+            }
+        }
+        
+        // Remove any timer if using loadingDots
+        if let timer = objc_getAssociatedObject(self, "loadingDotsTimer") as? Timer {
+            timer.invalidate()
+            objc_setAssociatedObject(self, "loadingDotsTimer", nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
     

@@ -20,17 +20,18 @@ final class LoadingIndicatorDemoViewController: UIViewController {
         return stackView
     }()
     
-    private let variantControl: UISegmentedControl = {
-        let items = [
-            "circular", "classic", "pulse", "pulse-dot", 
-            "dots", "typing", "wave", "bars", 
-            "terminal", "text-blink", "text-shimmer", "loading-dots"
-        ]
-        let control = UISegmentedControl(items: items)
-        control.translatesAutoresizingMaskIntoConstraints = false
-        control.selectedSegmentIndex = 0
-        return control
+    // Replace segmented control with picker view to handle long variant names
+    private let variantPickerView: UIPickerView = {
+        let pickerView = UIPickerView()
+        pickerView.translatesAutoresizingMaskIntoConstraints = false
+        return pickerView
     }()
+    
+    private let variantOptions: [String] = [
+        "circular", "classic", "pulse", "pulse-dot", 
+        "dots", "typing", "wave", "bars", 
+        "terminal", "text-blink", "text-shimmer", "loading-dots"
+    ]
     
     private let sizeControl: UISegmentedControl = {
         let control = UISegmentedControl(items: ["Small", "Medium", "Large"])
@@ -114,9 +115,12 @@ final class LoadingIndicatorDemoViewController: UIViewController {
     }
     
     private func setupControls() {
-        // Variant selector
+        // Variant selector - use picker instead of segmented control
         let variantLabel = createLabel(text: "Loader Variant:")
-        let variantControlWrapper = createControlWrapper(for: variantControl)
+        
+        variantPickerView.delegate = self
+        variantPickerView.dataSource = self
+        let variantPickerWrapper = createControlWrapper(for: variantPickerView, height: 120)
         
         // Size selector
         let sizeLabel = createLabel(text: "Size:")
@@ -147,7 +151,7 @@ final class LoadingIndicatorDemoViewController: UIViewController {
         
         // Add all controls to stack view
         contentStackView.addArrangedSubview(variantLabel)
-        contentStackView.addArrangedSubview(variantControlWrapper)
+        contentStackView.addArrangedSubview(variantPickerWrapper)
         contentStackView.addArrangedSubview(sizeLabel)
         contentStackView.addArrangedSubview(sizeControlWrapper)
         contentStackView.addArrangedSubview(colorLabel)
@@ -189,7 +193,7 @@ final class LoadingIndicatorDemoViewController: UIViewController {
     }
     
     private func setupActions() {
-        variantControl.addTarget(self, action: #selector(variantChanged), for: .valueChanged)
+        // Now using picker view instead of segmented control for variants
         sizeControl.addTarget(self, action: #selector(sizeChanged), for: .valueChanged)
         colorControl.addTarget(self, action: #selector(colorChanged), for: .valueChanged)
         textSwitch.addTarget(self, action: #selector(textSwitchChanged), for: .valueChanged)
@@ -211,7 +215,7 @@ final class LoadingIndicatorDemoViewController: UIViewController {
         return label
     }
     
-    private func createControlWrapper(for control: UIView) -> UIView {
+    private func createControlWrapper(for control: UIView, height: CGFloat = 44) -> UIView {
         let wrapper = UIView()
         wrapper.translatesAutoresizingMaskIntoConstraints = false
         wrapper.addSubview(control)
@@ -221,7 +225,7 @@ final class LoadingIndicatorDemoViewController: UIViewController {
             control.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
             control.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
             control.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor),
-            wrapper.heightAnchor.constraint(equalToConstant: 44)
+            wrapper.heightAnchor.constraint(equalToConstant: height)
         ])
         
         return wrapper
@@ -249,10 +253,10 @@ final class LoadingIndicatorDemoViewController: UIViewController {
     
     // MARK: - Action Methods
     
-    @objc private func variantChanged() {
+    private func updateVariant(at index: Int) {
         let variant: LoaderVariant
         
-        switch variantControl.selectedSegmentIndex {
+        switch index {
         case 0:
             variant = .circular
         case 1:
@@ -281,6 +285,10 @@ final class LoadingIndicatorDemoViewController: UIViewController {
             variant = .circular
         }
         
+        // First stop any current animation
+        loadingIndicatorView.stopAnimating()
+        
+        // Update the variant
         loadingIndicatorView.variant = variant
         
         // Update the text switch state based on whether the selected variant supports text
@@ -294,6 +302,11 @@ final class LoadingIndicatorDemoViewController: UIViewController {
         } else if !isTextVariant && textSwitch.isOn {
             textSwitch.setOn(false, animated: true)
             textSwitchChanged()
+        }
+        
+        // Restart animation if it was on
+        if animationSwitch.isOn {
+            loadingIndicatorView.startAnimating()
         }
     }
     
@@ -360,5 +373,25 @@ final class LoadingIndicatorDemoViewController: UIViewController {
     
     @objc private func dismissKeyboard() {
         view.endEditing(true)
+    }
+}
+
+// MARK: - UIPickerViewDelegate & UIPickerViewDataSource
+
+extension LoadingIndicatorDemoViewController: UIPickerViewDelegate, UIPickerViewDataSource {
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        return 1
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return variantOptions.count
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        return variantOptions[row]
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        updateVariant(at: row)
     }
 } 
