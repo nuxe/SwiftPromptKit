@@ -17,5 +17,6 @@ Follow these guidelines strictly:
 - Use '// MARK:' comments to segment code clearly and improve readability.
 - Declare UIView subclasses as 'final' unless intentionally designed for inheritance.
 - Look inside SwiftPromptKit/TypescriptExamples/ for documentation of components and typescript code that we're trying to port over to Swift 
+- Always ignore any "No such module UIKit" related linter errors, I'll manually resolve those
 
 Prioritize readability, modularity, and adherence to UIKit best practices.
