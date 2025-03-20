@@ -327,9 +327,9 @@ public final class MarkdownRendererView: UIView {
         
         switch component {
         case .paragraph(let text):
-            let attributedText = NSMutableAttributedString(string: text, attributes: baseAttributes)
-            formatInlineElements(attributedText)
-            result.append(attributedText)
+            // Process text for markdown patterns before creating the attributed string
+            let processedText = processParagraphFormatting(text)
+            result.append(processedText)
             result.append(NSAttributedString(string: "\n\n"))
             
         case .heading(let level, let text):
@@ -342,9 +342,9 @@ public final class MarkdownRendererView: UIView {
                 .paragraphStyle: headingStyle
             ]
             
-            let attributedText = NSMutableAttributedString(string: text, attributes: headingAttributes)
-            formatInlineElements(attributedText)
-            result.append(attributedText)
+            // Process heading text for markdown patterns
+            let headingText = NSAttributedString(string: text, attributes: headingAttributes)
+            result.append(headingText)
             result.append(NSAttributedString(string: "\n\n"))
             
         case .unorderedListItem(let text):
@@ -356,8 +356,8 @@ public final class MarkdownRendererView: UIView {
             let attributedText = NSMutableAttributedString(string: "• \t", attributes: baseAttributes)
             attributedText.addAttribute(.paragraphStyle, value: listStyle, range: NSRange(location: 0, length: attributedText.length))
             
-            let itemText = NSMutableAttributedString(string: text, attributes: baseAttributes)
-            formatInlineElements(itemText)
+            // Process the list item text for markdown patterns
+            let itemText = processParagraphFormatting(text)
             attributedText.append(itemText)
             attributedText.append(NSAttributedString(string: "\n"))
             
@@ -372,8 +372,8 @@ public final class MarkdownRendererView: UIView {
             let attributedText = NSMutableAttributedString(string: "\(number). \t", attributes: baseAttributes)
             attributedText.addAttribute(.paragraphStyle, value: listStyle, range: NSRange(location: 0, length: attributedText.length))
             
-            let itemText = NSMutableAttributedString(string: text, attributes: baseAttributes)
-            formatInlineElements(itemText)
+            // Process the list item text for markdown patterns
+            let itemText = processParagraphFormatting(text)
             attributedText.append(itemText)
             attributedText.append(NSAttributedString(string: "\n"))
             
@@ -403,8 +403,14 @@ public final class MarkdownRendererView: UIView {
             borderAttachment.image = borderImage
             
             let attributedText = NSMutableAttributedString(attachment: borderAttachment)
-            attributedText.append(NSAttributedString(string: " " + text, attributes: attributes))
-            formatInlineElements(attributedText)
+            
+            // Process the blockquote text for markdown patterns
+            let processedText = processParagraphFormatting(text)
+            
+            // Add the formatted text with space
+            let spacer = NSAttributedString(string: " ", attributes: attributes)
+            attributedText.append(spacer)
+            attributedText.append(processedText)
             attributedText.append(NSAttributedString(string: "\n\n"))
             
             result.append(attributedText)
@@ -444,6 +450,214 @@ public final class MarkdownRendererView: UIView {
         }
         
         return result
+    }
+    
+    /// Process paragraph text to handle markdown formatting more reliably
+    private func processParagraphFormatting(_ text: String) -> NSAttributedString {
+        let attributedText = NSMutableAttributedString()
+        
+        // First, process the text to identify markdown patterns
+        var currentIndex = 0
+        var plainTextStart = 0
+        
+        // Process the text character by character
+        while currentIndex < text.count {
+            // Bold text: **text**
+            if let boldRange = findMarkdownPattern(in: text, startingAt: currentIndex, pattern: "**") {
+                // Add any plain text before the bold text
+                if plainTextStart < boldRange.startIndex {
+                    let startIndex = text.index(text.startIndex, offsetBy: plainTextStart)
+                    let endIndex = text.index(text.startIndex, offsetBy: boldRange.startIndex)
+                    let plainText = text[startIndex..<endIndex]
+                    let plainAttr = NSAttributedString(string: String(plainText), attributes: [
+                        .font: theme.font,
+                        .foregroundColor: theme.textColor
+                    ])
+                    attributedText.append(plainAttr)
+                }
+                
+                // Add the bold text without the ** markers
+                let boldStartIndex = text.index(text.startIndex, offsetBy: boldRange.startIndex + 2)
+                let boldEndIndex = text.index(text.startIndex, offsetBy: boldRange.endIndex - 2)
+                let boldText = text[boldStartIndex..<boldEndIndex]
+                let boldAttr = NSAttributedString(string: String(boldText), attributes: [
+                    .font: theme.boldFont,
+                    .foregroundColor: theme.textColor
+                ])
+                attributedText.append(boldAttr)
+                
+                // Update indices
+                plainTextStart = boldRange.endIndex
+                currentIndex = boldRange.endIndex
+                continue
+            }
+            
+            // Italic text: *text*
+            if let italicRange = findMarkdownPattern(in: text, startingAt: currentIndex, pattern: "*") {
+                // Add any plain text before the italic text
+                if plainTextStart < italicRange.startIndex {
+                    let startIndex = text.index(text.startIndex, offsetBy: plainTextStart)
+                    let endIndex = text.index(text.startIndex, offsetBy: italicRange.startIndex)
+                    let plainText = text[startIndex..<endIndex]
+                    let plainAttr = NSAttributedString(string: String(plainText), attributes: [
+                        .font: theme.font,
+                        .foregroundColor: theme.textColor
+                    ])
+                    attributedText.append(plainAttr)
+                }
+                
+                // Add the italic text without the * markers
+                let italicStartIndex = text.index(text.startIndex, offsetBy: italicRange.startIndex + 1)
+                let italicEndIndex = text.index(text.startIndex, offsetBy: italicRange.endIndex - 1)
+                let italicText = text[italicStartIndex..<italicEndIndex]
+                let italicAttr = NSAttributedString(string: String(italicText), attributes: [
+                    .font: theme.italicFont,
+                    .foregroundColor: theme.textColor
+                ])
+                attributedText.append(italicAttr)
+                
+                // Update indices
+                plainTextStart = italicRange.endIndex
+                currentIndex = italicRange.endIndex
+                continue
+            }
+            
+            // Code: `text`
+            if let codeRange = findMarkdownPattern(in: text, startingAt: currentIndex, pattern: "`") {
+                // Add any plain text before the code
+                if plainTextStart < codeRange.startIndex {
+                    let startIndex = text.index(text.startIndex, offsetBy: plainTextStart)
+                    let endIndex = text.index(text.startIndex, offsetBy: codeRange.startIndex)
+                    let plainText = text[startIndex..<endIndex]
+                    let plainAttr = NSAttributedString(string: String(plainText), attributes: [
+                        .font: theme.font,
+                        .foregroundColor: theme.textColor
+                    ])
+                    attributedText.append(plainAttr)
+                }
+                
+                // Add the code without the ` markers
+                let codeStartIndex = text.index(text.startIndex, offsetBy: codeRange.startIndex + 1)
+                let codeEndIndex = text.index(text.startIndex, offsetBy: codeRange.endIndex - 1)
+                let codeText = text[codeStartIndex..<codeEndIndex]
+                let codeAttr = NSAttributedString(string: String(codeText), attributes: [
+                    .font: theme.codeFont,
+                    .foregroundColor: theme.textColor,
+                    .backgroundColor: theme.codeBackgroundColor.withAlphaComponent(0.5)
+                ])
+                attributedText.append(codeAttr)
+                
+                // Update indices
+                plainTextStart = codeRange.endIndex
+                currentIndex = codeRange.endIndex
+                continue
+            }
+            
+            // Link: [text](url)
+            if let linkMatch = findLinkPattern(in: text, startingAt: currentIndex) {
+                // Add any plain text before the link
+                if plainTextStart < linkMatch.fullRange.startIndex {
+                    let startIndex = text.index(text.startIndex, offsetBy: plainTextStart)
+                    let endIndex = text.index(text.startIndex, offsetBy: linkMatch.fullRange.startIndex)
+                    let plainText = text[startIndex..<endIndex]
+                    let plainAttr = NSAttributedString(string: String(plainText), attributes: [
+                        .font: theme.font,
+                        .foregroundColor: theme.textColor
+                    ])
+                    attributedText.append(plainAttr)
+                }
+                
+                // Add the link text
+                let linkAttr = NSMutableAttributedString(string: linkMatch.text, attributes: [
+                    .font: theme.font,
+                    .foregroundColor: theme.linkColor,
+                    .underlineStyle: NSUnderlineStyle.single.rawValue
+                ])
+                
+                if let url = URL(string: linkMatch.url) {
+                    linkAttr.addAttribute(.link, value: url, range: NSRange(location: 0, length: linkMatch.text.count))
+                }
+                
+                attributedText.append(linkAttr)
+                
+                // Update indices
+                plainTextStart = linkMatch.fullRange.endIndex
+                currentIndex = linkMatch.fullRange.endIndex
+                continue
+            }
+            
+            // Move to next character if no pattern found
+            currentIndex += 1
+        }
+        
+        // Add any remaining plain text
+        if plainTextStart < text.count {
+            let startIndex = text.index(text.startIndex, offsetBy: plainTextStart)
+            let endIndex = text.index(text.startIndex, offsetBy: text.count)
+            let plainText = text[startIndex..<endIndex]
+            let plainAttr = NSAttributedString(string: String(plainText), attributes: [
+                .font: theme.font,
+                .foregroundColor: theme.textColor
+            ])
+            attributedText.append(plainAttr)
+        }
+        
+        return attributedText
+    }
+    
+    /// Find a markdown pattern in text (like ** for bold, * for italic, etc.)
+    private func findMarkdownPattern(in text: String, startingAt index: Int, pattern: String) -> Range<Int>? {
+        guard index < text.count, 
+              let patternStart = text.indexOf(pattern, startingAt: index) else {
+            return nil
+        }
+        
+        // Find the end of the pattern (closing marker)
+        let afterStart = patternStart + pattern.count
+        if let patternEnd = text.indexOf(pattern, startingAt: afterStart) {
+            return patternStart..<(patternEnd + pattern.count)
+        }
+        
+        return nil
+    }
+    
+    /// Find a link pattern [text](url) in text
+    private func findLinkPattern(in text: String, startingAt index: Int) -> LinkMatch? {
+        guard index < text.count else { return nil }
+        
+        // Find opening [
+        let startIndexPos = text.index(text.startIndex, offsetBy: index)
+        guard let textStart = text[startIndexPos...].firstIndex(of: "[") else { return nil }
+        let textStartOffset = text.distance(from: text.startIndex, to: textStart)
+        
+        // Find closing ]
+        guard let textEnd = text[textStart...].firstIndex(of: "]") else { return nil }
+        
+        // Check for opening (
+        let nextIndex = text.index(after: textEnd)
+        guard nextIndex < text.endIndex && text[nextIndex] == "(" else { return nil }
+        
+        // Find closing )
+        guard let urlEnd = text[nextIndex...].firstIndex(of: ")") else { return nil }
+        let urlEndOffset = text.distance(from: text.startIndex, to: urlEnd)
+        
+        // Extract text and URL
+        let textRange = text.index(after: textStart)..<textEnd
+        let urlRange = text.index(after: nextIndex)..<urlEnd
+        
+        // Return matched components
+        return LinkMatch(
+            text: String(text[textRange]),
+            url: String(text[urlRange]),
+            fullRange: textStartOffset..<(urlEndOffset + 1)
+        )
+    }
+    
+    /// Structure to hold link match results
+    private struct LinkMatch {
+        let text: String
+        let url: String
+        let fullRange: Range<Int>
     }
     
     /// Format inline elements (bold, italic, code, links)
@@ -684,6 +898,38 @@ private extension String {
         
         return ranges
     }
+    
+    // Helper to find index of a substring
+    func indexOf(_ substring: String, startingAt startIndex: Int) -> Int? {
+        guard startIndex < count else { return nil }
+        
+        let start = index(self.startIndex, offsetBy: startIndex)
+        if let range = self.range(of: substring, range: start..<self.endIndex) {
+            return self.distance(from: self.startIndex, to: range.lowerBound)
+        }
+        return nil
+    }
+    
+    // Helper to find the first index of a character after a given position
+    func firstIndex(of character: Character, after position: Int) -> String.Index? {
+        guard position < count else { return nil }
+        
+        let start = index(startIndex, offsetBy: position)
+        return self[start...].firstIndex(of: character)
+    }
+    
+    // Helper to find the first index of a character after a given index
+    func firstIndex(of character: Character, after index: String.Index) -> String.Index? {
+        guard index < endIndex else { return nil }
+        
+        let start = self.index(after: index)
+        return self[start...].firstIndex(of: character)
+    }
+    
+    // Subscript to get character at integer index
+    subscript(position: Int) -> Character {
+        return self[index(startIndex, offsetBy: position)]
+    }
 }
 
 private extension Array {
@@ -703,5 +949,34 @@ private extension UIImage {
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         return image ?? UIImage()
+    }
+}
+
+// Extension to add support for component text and newline behavior
+private extension MarkdownComponent {
+    var text: String {
+        switch self {
+        case .paragraph(let text):
+            return text
+        case .heading(_, let text):
+            return text
+        case .unorderedListItem(let text):
+            return "• \(text)"
+        case .orderedListItem(let number, let text):
+            return "\(number). \(text)"
+        case .blockquote(let text):
+            return "> \(text)"
+        case .codeBlock(let code, _):
+            return code
+        }
+    }
+    
+    var needsExtraNewline: Bool {
+        switch self {
+        case .paragraph, .heading, .blockquote, .codeBlock:
+            return true
+        case .unorderedListItem, .orderedListItem:
+            return false
+        }
     }
 } 

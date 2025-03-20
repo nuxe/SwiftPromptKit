@@ -20,7 +20,7 @@ class MarkdownRendererViewController: UIViewController {
     private let sampleMarkdown = """
     # Markdown Example
     
-    This is a **bold text** and this is an *italic text*.
+    Normal text **bold text** normal text *italic text*.
     
     ## Lists
     
