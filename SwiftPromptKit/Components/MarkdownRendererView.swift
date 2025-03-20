@@ -77,10 +77,25 @@ public struct MarkdownTheme {
     /// Create a dark mode variant of the theme
     public static var darkMode: MarkdownTheme {
         MarkdownTheme(
+            font: .systemFont(ofSize: 16),
+            boldFont: .boldSystemFont(ofSize: 16),
+            italicFont: .italicSystemFont(ofSize: 16),
+            codeFont: .monospacedSystemFont(ofSize: 14, weight: .regular),
+            headingFonts: [
+                .boldSystemFont(ofSize: 24),
+                .boldSystemFont(ofSize: 22),
+                .boldSystemFont(ofSize: 20),
+                .boldSystemFont(ofSize: 18),
+                .boldSystemFont(ofSize: 16),
+                .boldSystemFont(ofSize: 14)
+            ],
             textColor: .white,
             linkColor: .systemBlue,
             codeBackgroundColor: UIColor(white: 0.2, alpha: 1.0),
-            blockquoteBackgroundColor: UIColor(white: 0.2, alpha: 1.0)
+            blockquoteBackgroundColor: UIColor(white: 0.2, alpha: 1.0),
+            blockquoteIndicatorColor: .systemGreen,
+            lineSpacing: 4.0,
+            paragraphSpacing: 8.0
         )
     }
     
@@ -435,36 +450,52 @@ public final class MarkdownRendererView: UIView {
     private func formatInlineElements(_ attributedString: NSMutableAttributedString) {
         let text = attributedString.string
         
-        // Bold (**text**)
-        formatBoldText(attributedString, in: text)
+        // Links first
+        formatLinks(attributedString, in: text)
         
-        // Italic (*text*)
-        formatItalicText(attributedString, in: text)
-        
-        // Inline code (`code`)
+        // Inline code 
         formatInlineCode(attributedString, in: text)
         
-        // Links ([title](url))
-        formatLinks(attributedString, in: text)
+        // Bold formatting
+        formatBoldText(attributedString, in: text)
+        
+        // Italic formatting
+        formatItalicText(attributedString, in: text)
     }
     
     /// Format bold text (**text**)
     private func formatBoldText(_ attributedString: NSMutableAttributedString, in text: String) {
-        let pattern = "\\*\\*(.+?)\\*\\*"
+        // Simple pattern: Match **text** format
+        let pattern = "\\*\\*([^*]+)\\*\\*"
         let regex = try? NSRegularExpression(pattern: pattern, options: [])
         
-        if let matches = regex?.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count)) {
-            for match in matches.reversed() {
-                if match.numberOfRanges >= 2 {
-                    let boldRange = match.range(at: 0)
-                    let contentRange = match.range(at: 1)
-                    
-                    // Replace the full match with just the content
-                    let contentText = (text as NSString).substring(with: contentRange)
-                    attributedString.replaceCharacters(in: boldRange, with: contentText)
-                    
-                    // Apply bold formatting
-                    attributedString.addAttribute(.font, value: theme.boldFont, range: NSRange(location: boldRange.location, length: contentText.count))
+        guard let matches = regex?.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count)) else {
+            return
+        }
+        
+        for match in matches.reversed() {
+            guard match.numberOfRanges >= 2 else { continue }
+            
+            let boldRange = match.range(at: 0)
+            let contentRange = match.range(at: 1)
+            
+            if boldRange.location == NSNotFound || contentRange.location == NSNotFound {
+                continue
+            }
+            
+            // Safe check for valid ranges
+            if boldRange.location + boldRange.length <= text.utf16.count && 
+               contentRange.location + contentRange.length <= text.utf16.count {
+                // Get the bold text without the ** markers
+                let contentText = (text as NSString).substring(with: contentRange)
+                
+                // Replace the entire match with just the content
+                attributedString.replaceCharacters(in: boldRange, with: contentText)
+                
+                // Apply bold formatting at the location where the replacement happened
+                if boldRange.location < attributedString.length {
+                    let formattingRange = NSRange(location: boldRange.location, length: min(contentText.count, attributedString.length - boldRange.location))
+                    attributedString.addAttribute(.font, value: theme.boldFont, range: formattingRange)
                 }
             }
         }
@@ -472,21 +503,37 @@ public final class MarkdownRendererView: UIView {
     
     /// Format italic text (*text*)
     private func formatItalicText(_ attributedString: NSMutableAttributedString, in text: String) {
-        let pattern = "\\*([^\\*]+)\\*"
+        // Simple pattern: Match *text* format
+        let pattern = "\\*([^*]+)\\*"
         let regex = try? NSRegularExpression(pattern: pattern, options: [])
         
-        if let matches = regex?.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count)) {
-            for match in matches.reversed() {
-                if match.numberOfRanges >= 2 {
-                    let italicRange = match.range(at: 0)
-                    let contentRange = match.range(at: 1)
-                    
-                    // Replace the full match with just the content
-                    let contentText = (text as NSString).substring(with: contentRange)
-                    attributedString.replaceCharacters(in: italicRange, with: contentText)
-                    
-                    // Apply italic formatting
-                    attributedString.addAttribute(.font, value: theme.italicFont, range: NSRange(location: italicRange.location, length: contentText.count))
+        guard let matches = regex?.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count)) else {
+            return
+        }
+        
+        for match in matches.reversed() {
+            guard match.numberOfRanges >= 2 else { continue }
+            
+            let italicRange = match.range(at: 0)
+            let contentRange = match.range(at: 1)
+            
+            if italicRange.location == NSNotFound || contentRange.location == NSNotFound {
+                continue
+            }
+            
+            // Safe check for valid ranges
+            if italicRange.location + italicRange.length <= text.utf16.count && 
+               contentRange.location + contentRange.length <= text.utf16.count {
+                // Get the italic text without the * markers
+                let contentText = (text as NSString).substring(with: contentRange)
+                
+                // Replace the entire match with just the content
+                attributedString.replaceCharacters(in: italicRange, with: contentText)
+                
+                // Apply italic formatting at the location where the replacement happened
+                if italicRange.location < attributedString.length {
+                    let formattingRange = NSRange(location: italicRange.location, length: min(contentText.count, attributedString.length - italicRange.location))
+                    attributedString.addAttribute(.font, value: theme.italicFont, range: formattingRange)
                 }
             }
         }

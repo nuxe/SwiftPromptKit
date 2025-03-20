@@ -104,10 +104,12 @@ class MarkdownRendererViewController: UIViewController {
         
         if isDarkMode {
             markdownRendererView.setTheme(.darkMode)
-            view.backgroundColor = .systemBackground
+            view.backgroundColor = .black
+            themeButton.setTitleColor(.white, for: .normal)
         } else {
             markdownRendererView.setTheme(.lightMode)
             view.backgroundColor = .systemBackground
+            themeButton.setTitleColor(.systemBlue, for: .normal)
         }
     }
 }
