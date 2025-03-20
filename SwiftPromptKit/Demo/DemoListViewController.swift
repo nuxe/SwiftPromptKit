@@ -37,10 +37,10 @@ final class DemoListViewController: UIViewController {
             demoViewControllerProvider: { NotImplementedComponentViewController(componentName: "MessageBubbleView") }
         ),
         ComponentItem(
-            name: "MarkdownRenderer",
+            name: "MarkdownRendererView",
             description: "Renders Markdown-formatted text with rich formatting",
-            status: .notImplemented,
-            demoViewControllerProvider: { NotImplementedComponentViewController(componentName: "MarkdownRenderer") }
+            status: .implemented,
+            demoViewControllerProvider: { MarkdownRendererViewController() }
         ),
         ComponentItem(
             name: "AutoScrollingChatView",

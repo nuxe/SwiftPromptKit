@@ -98,4 +98,4 @@ promptInputView.addActionButton(
 
 - The PromptInputView automatically handles keyboard avoidance when used with the `keyboardLayoutGuide`
 - For best results, set the `delegate` before adding to the view hierarchy
-- The component automatically resizes the text input area based on content, up to the specified `maxHeight` 
+- The component automatically resizes the text input area based on content, up to the specified `maxHeight`
